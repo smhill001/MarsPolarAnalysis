@@ -15,7 +15,9 @@ import ConfigFiles as CF
 class MarsMeasData(CF.readtextfilelines):
     pass
     def load_all_data(self):
-        import ephem
+        #import ephem
+        import marstime
+        from astropy.time import Time
         import numpy as np
         import MarsPolarLibrary as MPL
        
@@ -30,18 +32,23 @@ class MarsMeasData(CF.readtextfilelines):
             fields=self.CfgLines[recordindex].split(',')
             datetimestring=MPL.MakeDateTime(fields[4],fields[5])
             self.DateTimeString.append(datetimestring)
-            self.DateTime.append(np.datetime64(datetimestring))
+            dt64=np.datetime64(datetimestring)
+            self.DateTime.append(dt64)
             self.PoleandObject.append(fields[1])
             self.Latitude.append(float(fields[10]))
-            
-            Planet = ephem.Mars(datetimestring)
-            hltemp=float(Planet.hlon)*180./np.pi
-            self.hlon.append(hltemp)
-            hltemp=float(Planet.hlat)*180./np.pi
-            self.hlat.append(hltemp)
+            #print dt64
+            t=Time(str(dt64),format='isot',scale='utc')
+            ott=t.jd-2451545.0
+            Ls=marstime.Mars_Ls(j2000_ott=ott)
+            self.hlon.append(Ls)
+            self.hlat.append(marstime.solar_declination(ls=Ls))
+            #Planet = ephem.Mars(datetimestring)
+            #MAY WANT ADDITIONAL MARS EPHEMERIS PARAMETERS HERE
 
     def load_select_data(self,Pole,Type,OppositionDate):
-        import ephem
+        #import ephem
+        import marstime
+        from astropy.time import Time
         import numpy as np
         import MarsPolarLibrary as MPL
        
@@ -59,15 +66,17 @@ class MarsMeasData(CF.readtextfilelines):
             dt64=np.datetime64(datetimestring)
             if Odate64-180<=dt64<=Odate64+180:
                 self.DateTimeString.append(datetimestring)
-                self.DateTime.append(np.datetime64(datetimestring))
+                self.DateTime.append(dt64)
                 self.PoleandObject.append(fields[1])
                 self.Latitude.append(float(fields[10]))
             
-                Planet = ephem.Mars(datetimestring)
-                hltemp=float(Planet.hlon)*180./np.pi
-                self.hlon.append(hltemp)
-                hltemp=float(Planet.hlat)*180./np.pi
-                self.hlat.append(hltemp)
+                t=Time(str(dt64),format='isot',scale='utc')
+                ott=t.jd-2451545.0
+                Ls=marstime.Mars_Ls(j2000_ott=ott)
+                self.hlon.append(Ls)
+                self.hlat.append(marstime.solar_declination(ls=Ls))
+                #Planet = ephem.Mars(datetimestring)
+                #MAY WANT ADDITIONAL MARS EPHEMERIS PARAMETERS HERE
             
 def MakeDateTime(datefield,timefield):
     tempdate=datefield[1:11]
@@ -84,6 +93,9 @@ def MakeDateTime(datefield,timefield):
 def SetupMarsPlot():
     import matplotlib.pyplot as pl
     import numpy as np
+    import marstime
+    from astropy.time import Time
+    from astropy import constants as const
  
     canvas=pl.figure(figsize=(8.0, 6.0), dpi=150,facecolor="white")
     x0,x1,xtks=-180.,180.,13
@@ -141,32 +153,61 @@ def SetupMarsPlot():
     #SOLAR LATITUDE
     Target="Solar Latitude"
 
-    canvas.add_subplot(3,1,2,axisbg="white") 
+    axL=canvas.add_subplot(3,1,2,axisbg="white") 
     y0,y1,ytks=-30.,30.,13
-    pl.xlim(x0,x1)
-    # Set x ticks
-    pl.xticks(np.linspace(x0,x1,xtks, endpoint=True))
-    # Set y limits
-    pl.ylim(y0,y1)
-    # Set y ticks
-    pl.yticks(np.linspace(y0,y1,ytks, endpoint=True))
-    pl.grid(linewidth=0.5)
-    pl.tick_params(axis='y', which='major', labelsize=9)
-    pl.tick_params(labelbottom=False)
-    pl.ylabel("Solar Latitude (deg)",fontsize=9)
+    axL.set_xlim(x0,x1)
+    axL.set_xticks(np.linspace(x0,x1,xtks, endpoint=True))
+    axL.set_ylim(y0,y1)
+    axL.set_yticks(np.linspace(y0,y1,ytks, endpoint=True))
+    axL.grid(linewidth=0.5)
+    axL.tick_params(axis='y', which='major', labelsize=9)
+    axL.tick_params(labelbottom=False)
+    axL.set_ylabel("Solar Latitude (deg)",fontsize=9)
     
-    pl.title(Target,fontsize=9)
+    axL.set_title(Target,fontsize=9)
     
-    LS_array=np.linspace(-180.,180.,73.)
-    SolLat=25.*np.sin(LS_array*np.pi/180.)
+    #306 days to start at Autumn equinox rather than vernal equinox
+    dateoffset=np.arange(0,686,2,dtype=int)-306 
+    datearray=np.datetime64('2000-06-03')+dateoffset
     
-    pl.plot(LS_array,SolLat,color='k',label="Solar Latitude (deg)")
+    LS_array=[]
+    SL_array=[]
+    D_array=[]
+    F_array=[]
+    for d in datearray:
+        t=Time(str(d),format='isot',scale='utc')
+        ott=t.jd-2451545.0
+        LS_temp=marstime.Mars_Ls(j2000_ott=ott)
+        SL_temp=marstime.solar_declination(ls=LS_temp)
+        D_temp=marstime.heliocentric_distance(j2000_ott=ott)
+        F_temp=const.L_sun/(4.*np.pi*(const.au*D_temp)**2)
+        print ott,LS_temp,SL_temp,F_temp
+        LS_array.append(float(LS_temp))
+        SL_array.append(float(SL_temp))
+        D_array.append(float(D_temp))
+        F_array.append(float(F_temp.value))
+    LS_array=np.array(LS_array)
+    SL_array=np.array(SL_array)
+    
+    LS_array=np.mod(LS_array+180.0,360.)-180.
+        
+    axL.plot(LS_array,SL_array,color='k',label="Solar Latitude (deg)")
+    
+    axD=axL.twinx()
+    axD.set_xlim(x0,x1)
+    axD.set_xticks(np.linspace(x0,x1,xtks, endpoint=True))
+    axD.set_ylim(500,700)
+    axD.set_yticks(np.linspace(400,800,9, endpoint=True))
+    axD.tick_params(axis='y', which='major', labelsize=9)
+    axD.set_ylabel("Solar Flux (W/m^2)",fontsize=9)
+
+    axD.plot(LS_array,F_array,color='b',label="Solar Distance")
     
     Seasons=['Autumn','Winter','Spring','Summer']
     for j in range(0,len(Seasons)):
-        pl.annotate(Seasons[j],xy=(-135.+90.*j,27.5),size=9,horizontalalignment='center',verticalalignment='center')
-        pl.annotate(Seasons[np.mod(j+2,4)],xy=(-135.+90.*j,-27.5),size=9,horizontalalignment='center',verticalalignment='center')
-        
+        axL.annotate(Seasons[j],xy=(-135.+90.*j,27.5),size=9,horizontalalignment='center',verticalalignment='center')
+        axL.annotate(Seasons[np.mod(j+2,4)],xy=(-135.+90.*j,-27.5),size=9,horizontalalignment='center',verticalalignment='center')
+   
     pl.subplots_adjust(left=0.1, right=0.9, top=0.95, bottom=0.09)
 
     return axN,axS

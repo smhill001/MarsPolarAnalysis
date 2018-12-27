@@ -35,7 +35,7 @@ for od in OppositionDates:
         Indices = [k for k, x in enumerate(MarsObs.PoleandObject) if x[1:4] == "NP"+CaporHood[0]] #what does this do!?
         Latitude=[MarsObs.Latitude[index] for index in Indices]
         hlon=[MarsObs.hlon[index] for index in Indices]
-        Ls_array=np.array(hlon)-(35.4377+49.5581)
+        Ls_array=np.array(hlon)
         Ls_array=np.mod(Ls_array+180.0,360.)-180.
         if CaporHood=="Cap":
             mkr='o'
@@ -49,7 +49,7 @@ for od in OppositionDates:
         Indices = [k for k, x in enumerate(MarsObs.PoleandObject) if x[1:4] == "SP"+CaporHood[0]] #what does this do!?
         Latitude=[MarsObs.Latitude[index] for index in Indices]
         hlon=[MarsObs.hlon[index] for index in Indices]
-        Ls_array=np.array(hlon)-(35.4377+49.5581)
+        Ls_array=np.array(hlon)
         Ls_array=np.mod(Ls_array+180.0,360.)-180.
         if CaporHood=="Cap":
             mkr='o'
@@ -71,7 +71,7 @@ canvas=pl.figure(figsize=(4.5, 4.5), dpi=150,facecolor="white")
 canvas.add_subplot(1,1,1,axisbg="white") 
 
 MarsObs.load_all_data()
-All_Ls_array=np.array(MarsObs.hlon)-(35.4377+49.5581)
+All_Ls_array=np.array(MarsObs.hlon)#-(35.4377+49.5581)
 All_Ls_array=np.mod(All_Ls_array+180.0,360.)-180.
 date=[]
 for i in range(0,len(MarsObs.DateTimeString)):
@@ -88,9 +88,4 @@ pl.title("LS Coverage",fontsize=9)
 
 pl.scatter(All_Ls_array,date,marker='o',s=10,color='k',alpha=1.0,linewidths=0)
 
-DateIndices = [k for k, x in enumerate(date) if x > np.datetime64("2018-01-01")] #what does this do!?
-for i in DateIndices:
-    print date[i]
-
-print date>np.datetime64("2018-01-01")
 pl.savefig("f:\\Astronomy\Projects\Planets\Mars\Imaging Data\Mapping\Mars_Coverage.png",dpi=300)
