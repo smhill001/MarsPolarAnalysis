@@ -2,6 +2,16 @@
 """
 Created on Fri Jul 29 07:42:34 2016
 
+    This library supports the analysis of Mars polar cap and polar hood cloud
+    development and retreat.
+    
+    0CLASS MarsMeasData
+    0  INIT
+    0  load_all_data
+    0  load_select_data
+    1FUNCTION MakeDateTime(datefield,timefield)
+    2FUNCTION SetupMarsPlot
+
 @author: Astronomy
 """
 
@@ -181,7 +191,7 @@ def SetupMarsPlot():
         SL_temp=marstime.solar_declination(ls=LS_temp)
         D_temp=marstime.heliocentric_distance(j2000_ott=ott)
         F_temp=const.L_sun/(4.*np.pi*(const.au*D_temp)**2)
-        print ott,LS_temp,SL_temp,F_temp
+        print ott,LS_temp,SL_temp,D_temp,F_temp
         LS_array.append(float(LS_temp))
         SL_array.append(float(SL_temp))
         D_array.append(float(D_temp))

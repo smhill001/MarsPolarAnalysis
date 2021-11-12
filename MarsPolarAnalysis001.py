@@ -2,7 +2,10 @@
 """
 Created on Wed Jul 27 13:03:32 2016
 
-@author: Astronomy
+    This script reads measurements of the Mars polar caps and polar hood 
+    clouds and plots them with respect to Martian seasons.
+
+@author: SM Hill
 """
 
 import sys
@@ -19,10 +22,10 @@ fn="f:/Astronomy/Projects/Planets/Mars/Imaging Data/Mapping/HillMars_mea.CSV"
 temp=0
 
 OppositionDates=["2005-11-07","2007-12-24","2010-01-29","2012-03-03",
-                 "2014-04-08","2016-05-22","2018-07-27"]
+                 "2014-04-08","2016-05-22","2018-07-27","2020-10-13"]
 LineColorList=np.array([[0.4,0.2,0.6],[0.1,0.1,0.7],[0.1,0.6,0.1],
                         [0.6,0.5,0.2],[0.6,0.1,0.0],[0.0,0.0,0.0],
-                        [0.5,0.5,0.5]])
+                        [0.5,0.5,0.5],[0.0,0.0,0.0]])
 
 axN,axS=MPL.SetupMarsPlot()
 
@@ -40,11 +43,13 @@ for od in OppositionDates:
         if CaporHood=="Cap":
             mkr='o'
             axN.scatter(np.array(Ls_array,dtype=float),np.array(Latitude,dtype=float),
-                       marker=mkr,s=15,color=LineColorList[np.mod(temp,7)],alpha=1.0,linewidths=0,label=od)       
+                       marker=mkr,s=10,color=LineColorList[np.mod(temp,8)],
+                       alpha=1.0,linewidths=0,label=od)       
         elif CaporHood=="Hood":
             mkr='+'
             axN.scatter(np.array(Ls_array,dtype=float),np.array(Latitude,dtype=float),
-                       marker=mkr,s=15,color=LineColorList[np.mod(temp,7)],alpha=1.0,linewidths=0)
+                       marker=mkr,s=10,color=LineColorList[np.mod(temp,8)],
+                       alpha=1.0,linewidths=0)
         
         Indices = [k for k, x in enumerate(MarsObs.PoleandObject) if x[1:4] == "SP"+CaporHood[0]] #what does this do!?
         Latitude=[MarsObs.Latitude[index] for index in Indices]
@@ -56,7 +61,8 @@ for od in OppositionDates:
         elif CaporHood=="Hood":
             mkr='+'
         axS.scatter(np.array(Ls_array,dtype=float),np.array(Latitude,dtype=float),
-                   marker=mkr,s=15,color=LineColorList[np.mod(temp,7)],alpha=1.0,linewidths=0,label=od)
+                   marker=mkr,s=10,color=LineColorList[np.mod(temp,8)],alpha=1.0,
+                   linewidths=0,label=od)
     temp=temp+1
     axN.legend(loc=2,ncol=3,fontsize=6,scatterpoints=1)
     #axS.legend(loc=2,ncol=3,fontsize=6,scatterpoints=1)
